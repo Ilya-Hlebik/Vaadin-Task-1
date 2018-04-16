@@ -9,8 +9,6 @@ import com.vaadin.ui.NativeSelect;
 import com.vaadin.ui.TextField;
 
 public class HotelEditForm extends FormLayout {
-	
-
 
 	private HotelUI ui;
 	private HotelService hotelService = HotelService.getInstance();
@@ -40,13 +38,17 @@ public class HotelEditForm extends FormLayout {
 		binder.bindInstanceFields(this);
 		
 		save.addClickListener(e -> save());
-		close.addClickListener(e -> setVisible(false));
+		close.addClickListener(e -> {
+		HotelUI.deleteHotel.setEnabled(false) ;
+		ui.updateList();
+		setVisible(false);});
 	}
 
 	private void save() {
 		 hotelService.save(hotel);
 		 ui.updateList();
 		 setVisible(false);
+		 HotelUI.deleteHotel.setEnabled(false) ;
 	}
 	
 	public Hotel getHotel() {
