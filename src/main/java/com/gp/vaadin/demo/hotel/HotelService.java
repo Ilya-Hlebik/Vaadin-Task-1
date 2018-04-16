@@ -33,15 +33,15 @@ public class HotelService {
 		return findAll(null,null);
 	}
 
-	public synchronized List<Hotel> findAll(String stringFilter1, String stringFilter2) {
+	public synchronized List<Hotel> findAll(String filterByName, String filterByAddress) {
 		ArrayList<Hotel> arrayList = new ArrayList<>();
 		for (Hotel hotel : hotels.values()) {
 			try {
 				 
-				boolean passesFilter = (stringFilter1 == null || stringFilter1.isEmpty())
-						|| hotel.getName().toLowerCase().contains(stringFilter1.toLowerCase());
-				boolean passesFilter2 =(stringFilter2 == null || stringFilter2.isEmpty())
-						|| hotel.getAddress().toLowerCase().contains(stringFilter2.toLowerCase());
+				boolean passesFilter = (filterByName == null || filterByName.isEmpty())
+						|| hotel.getName().toLowerCase().contains(filterByName.toLowerCase());
+				boolean passesFilter2 =(filterByAddress == null || filterByAddress.isEmpty())
+						|| hotel.getAddress().toLowerCase().contains(filterByAddress.toLowerCase());
 				if (passesFilter&&passesFilter2) {
 					arrayList.add(hotel.clone());
 				}
