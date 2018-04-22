@@ -12,36 +12,38 @@ import java.util.logging.Logger;
 
 public class HotelService {
 
-	private static HotelService instance;
-	private static final Logger LOGGER = Logger.getLogger(HotelService.class.getName());
+    private static HotelService instance;
+    private static final Logger LOGGER = Logger.getLogger(HotelService.class.getName());
+    
+    CategoryService categoryService = CategoryService.getInstance();
+    List<Category> categoryList = categoryService.findAll();
+    
+    private final HashMap<Long, Hotel> hotels = new HashMap<>();
+    private long nextId = 0;
 
-	private final HashMap<Long, Hotel> hotels = new HashMap<>();
-	private long nextId = 0;
+    private HotelService() {
+    }
 
-	private HotelService() {
-	}
+    public static HotelService getInstance() {
+        if (instance == null) {
+            instance = new HotelService();
+            instance.ensureTestData();
+        }
+        return instance;
+    }
 
-	public static HotelService getInstance() {
-		if (instance == null) {
-			instance = new HotelService();
-			instance.ensureTestData();
-		}
-		return instance;
-	}
+    public synchronized List<Hotel> findAll() {
+        return findAll(null,null);
+    }
 
-	public synchronized List<Hotel> findAll() {
-		return findAll(null,null);
-	}
 
 	public synchronized List<Hotel> findAll(String filterByName, String filterByAddress) {
 		ArrayList<Hotel> arrayList = new ArrayList<>();
 		for (Hotel hotel : hotels.values()) {
 			try {
 				 
-				boolean passesFilter = (filterByName == null || filterByName.isEmpty())
-						|| hotel.getName().toLowerCase().contains(filterByName.toLowerCase());
-				boolean passesFilter2 =(filterByAddress == null || filterByAddress.isEmpty())
-						|| hotel.getAddress().toLowerCase().contains(filterByAddress.toLowerCase());
+				boolean passesFilter = passesFilter(filterByName, hotel.getName());
+				boolean passesFilter2 =passesFilter(filterByAddress,hotel.getAddress());
 				if (passesFilter&&passesFilter2) {
 					arrayList.add(hotel.clone());
 				}
@@ -59,6 +61,10 @@ public class HotelService {
 		return arrayList;
 	}
 
+	public boolean passesFilter(String filter, String value) {
+	return	(filter == null || filter.isEmpty())|| value.toLowerCase().contains(filter.toLowerCase());
+	}
+	
 	public synchronized List<Hotel> findAll(String stringFilter, int start, int maxresults) {
 		ArrayList<Hotel> arrayList = new ArrayList<>();
 		for (Hotel contact : hotels.values()) {
@@ -85,35 +91,37 @@ public class HotelService {
 		}
 		return arrayList.subList(start, end);
 	}
+     
 
-	public synchronized long count() {
-		return hotels.size();
-	}
+    public synchronized long count() {
+        return hotels.size();
+    }
 
-	public synchronized void delete(Hotel value) {
-		hotels.remove(value.getId());
-	}
+    public synchronized void delete(Hotel value) {
+        hotels.remove(value.getId());
+    }
 
-	public synchronized void save(Hotel entry) {
-		if (entry == null) {
-			LOGGER.log(Level.SEVERE, "Hotel is null.");
-			return;
-		}
-		if (entry.getId() == null) {
-			entry.setId(nextId++);
-		}
-		try {
-			entry = (Hotel) entry.clone();
-		} catch (Exception ex) {
-			throw new RuntimeException(ex);
-		}
-		hotels.put(entry.getId(), entry);
-	}
+    public synchronized boolean save(Hotel entry) {
+        if (entry == null) {
+            LOGGER.log(Level.SEVERE, "Hotel is null.");
+            return false;
+        }
+        if (entry.getId() == null) {
+            entry.setId(nextId++);
+        }
+        try {
+            entry = (Hotel) entry.clone();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        hotels.put(entry.getId(), entry);
+        return true;
+    }
 
-	public void ensureTestData() {
-		if (findAll().isEmpty()) {
-			final String[] hotelData = new String[] {
-					"3 Nagas Luang Prabang - MGallery by Sofitel;4;https://www.booking.com/hotel/la/3-nagas-luang-prabang-by-accor.en-gb.html;Vat Nong Village, Sakkaline Road, Democratic Republic Lao, 06000 Luang Prabang, Laos; ",
+    private void ensureTestData() {
+        if (findAll().isEmpty()) {
+            final String[] hotelData = new String[] {
+            		"3 Nagas Luang Prabang - MGallery by Sofitel;4;https://www.booking.com/hotel/la/3-nagas-luang-prabang-by-accor.en-gb.html;Vat Nong Village, Sakkaline Road, Democratic Republic Lao, 06000 Luang Prabang, Laos; ",
 					"Abby Boutique Guesthouse;1;https://www.booking.com/hotel/la/abby-boutique-guesthouse.en-gb.html;Ban Sawang , 01000 Vang Vieng, Laos; ",
 					"Bountheung Guesthouse;1;https://www.booking.com/hotel/la/bountheung-guesthouse.en-gb.html;Ban Tha Heua, 01000 Vang Vieng, Laos; ",
 					"Chalouvanh Hotel;2;https://www.booking.com/hotel/la/chalouvanh.en-gb.html;13 road, Ban Phonesavanh, Pakse District, 01000 Pakse, Laos; ",
@@ -137,23 +145,21 @@ public class HotelService {
 					"Phakchai Hotel;2;https://www.booking.com/hotel/la/phakchai.en-gb.html;137 Ban Wattay Mueng Sikothabong Vientiane Laos, 01000 Vientiane, Laos; ",
 					"Phetmeuangsam Hotel;2;https://www.booking.com/hotel/la/phetmisay.en-gb.html;Ban Phanhxai, Xumnuea, Xam Nua, 01000 Xam Nua, Laos; " };
 
-			Random r = new Random(0);
-			for (String hotel : hotelData) {
-				String[] split = hotel.split(";");
-				Hotel h = new Hotel();
-				h.setName(split[0]);
-				h.setRating(split[1]);
-				h.setUrl( split[2] );
-				h.setAddress(split[3]);
-				h.setDescription(split[4]);
-				h.setCategory(HotelCategory.values()[r.nextInt(HotelCategory.values().length)]);
-				int daysOld = 0 - r.nextInt(365 * 30);
-				h.setOperatesFrom((LocalDate.now().plusDays(daysOld)));
-				save(h);
-			}
-		}
-	}
+     
+
+            Random r = new Random(0);
+            for (String hotel : hotelData) {
+                String[] split = hotel.split(";");
+                Hotel h = new Hotel();
+                h.setName(split[0]);
+                h.setRating(Integer.valueOf(split[1]));
+                h.setUrl(split[2]);
+                h.setAddress(split[3]);
+                h.setCategory(categoryList.get(r.nextInt(categoryList.size())));
+                h.setOperatesFrom(LocalDate.now().plusDays(0 - r.nextInt(365 * 30)).toEpochDay());
+                save(h);
+            }
+        }
+    }
 
 }
-
-
